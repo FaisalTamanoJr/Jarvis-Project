@@ -15,6 +15,9 @@ from utils import CvFpsCalc
 from model import KeyPointClassifier
 from model import PointHistoryClassifier
 
+import time
+import os
+from pynput.mouse import Controller
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -98,6 +101,11 @@ def main():
     #  ########################################################################
     mode = 0
 
+    current_gesture = None
+    last_gesture_time = 0
+    DEBOUNCE_DELAY = 1
+    mouse = Controller()
+
     while True:
         fps = cvFpsCalc.get()
 
@@ -145,6 +153,25 @@ def main():
                     point_history.append(landmark_list[8])
                 else:
                     point_history.append([0, 0])
+
+                gesture = keypoint_classifier_labels[hand_sign_id]
+                
+                current_time = time.time()
+                if current_time - last_gesture_time >= DEBOUNCE_DELAY:
+                    if gesture != "No Key":
+                        if gesture == "LEFT":
+                            os.system("i3-msg workspace prev")
+                        elif gesture == "RIGHT":
+                            os.system("i3-msg workspace next")
+                        elif gesture == "UP":
+                            mouse.scroll(0,15)
+                        elif gesture == "DOWN":
+                            mouse.scroll(0,-15)
+                        elif gesture == "CLOSE":
+                            os.system("i3-msg kill")
+                    
+                    current_gesture = gesture
+                    last_gesture_time = current_time
 
                 # Finger gesture classification
                 finger_gesture_id = 0
